@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Soul Sketch | See The Face Of Your Soulmate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060409;
+  --gold: #c9a96e;
+  --gold-dim: rgba(201,169,110,0.12);
+  --rose: #a0394f;
+  --cream: #f7f2eb;
+  --muted: rgba(247,242,235,0.4);
+  --border: rgba(201,169,110,0.18);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--cream);
+  font-family: 'Inter', sans-serif; font-weight: 300;
+  overflow-x: hidden; cursor: none;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, .corm { font-family: 'Cormorant', serif; font-weight: 300; }
+.h1-size { font-size: clamp(40px, 11vw, 110px); line-height: 1; }
+.h2-size { font-size: clamp(28px, 8vw, 64px); line-height: 1.1; }
+.label { font-size: 10px; letter-spacing: 5px; color: var(--gold); text-transform: uppercase; }
+.italic { font-style: italic; }
+.gold-text { color: var(--gold); }
+.rose-text { color: var(--rose); }
+.brown-text { color: #8b5a2b; }
+
+/* Noise & Progress */
+.noise { position: fixed; inset: 0; z-index: 9998; pointer-events: none; opacity: 0.025; mix-blend-mode: overlay; }
+#progress { position: fixed; top: 0; left: 0; height: 2px; background: var(--gold); z-index: 10000; width: 0%; transition: width 0.1s; }
+
+/* Cursor */
+#c-dot { position: fixed; width: 6px; height: 6px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); mix-blend-mode: difference; }
+#c-ring { position: fixed; width: 40px; height: 40px; border: 1px solid var(--gold); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s; display: flex; align-items: center; justify-content: center; font-size: 8px; color: var(--bg); letter-spacing: 1px; }
+#c-ring::after { content: "GO"; opacity: 0; transition: opacity 0.3s; }
+#c-ring.hover { width: 60px; height: 60px; background: var(--gold); mix-blend-mode: normal; }
+#c-ring.hover::after { opacity: 1; }
+
+/* Intro */
+#intro { position: fixed; inset: 0; z-index: 10001; display: flex; flex-direction: column; pointer-events: none; }
+.i-half { flex: 1; background: #000; transition: transform 0.7s cubic-bezier(0.77,0,0.175,1); }
+#i-line { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); height: 1px; width: 0%; background: var(--gold); transition: width 0.8s ease-in-out; }
+body.loaded #i-line { width: 100%; }
+body.open #i-line { opacity: 0; }
+body.open .i-top { transform: translateY(-100%); }
+body.open .i-bot { transform: translateY(100%); }
+
+/* Starfield */
+#starfield { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+
+/* Nav */
+nav { position: fixed; top: 0; width: 100%; padding: 24px 5vw; z-index: 100; display: flex; justify-content: space-between; align-items: center; transition: all 0.4s; }
+nav.scrolled { background: rgba(6,4,9,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 16px 5vw; }
+.logo { font-size: 13px; letter-spacing: 6px; color: var(--gold); text-transform: uppercase; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 16px 32px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; border: 1px solid var(--gold); color: var(--gold); transition: all 0.3s; background: transparent; text-align: center; cursor: none; }
+.btn-pri { background: var(--gold); color: var(--bg); }
+.btn-pri:hover { background: #e0c48f; border-color: #e0c48f; }
+.btn-ghost:hover { background: var(--gold); color: var(--bg); }
+.btn-rose { border-color: var(--rose); color: var(--rose); }
+.btn-rose:hover { background: var(--rose); color: var(--cream); }
+.btn-brn { border-color: #8b5a2b; color: #8b5a2b; }
+.btn-brn:hover { background: #8b5a2b; color: var(--cream); }
+
+/* Hero */
+.hero { height: 100svh; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 80px 5vw 0; position: relative; }
+.hero-content { position: relative; z-index: 2; width: 100%; }
+.h-anim { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.25,0.46,0.45,0.94); }
+body.show-hero .h-anim { opacity: 1; transform: translateY(0); }
+.d1 { transition-delay: 1.4s; } .d2 { transition-delay: 1.55s; } .d3 { transition-delay: 1.7s; } .d4 { transition-delay: 1.85s; } .d5 { transition-delay: 2s; }
+
+.port-wrap { position: relative; width: 150px; height: 180px; margin: 20px auto; }
+.glow { position: absolute; inset: -50px; background: radial-gradient(circle, rgba(201,169,110,0.15) 0%, transparent 70%); border-radius: 50%; }
+.ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid var(--gold-dim); border-radius: 50%; }
+.r1 { width: 180px; height: 180px; animation: spin 20s linear infinite; border-top-color: var(--gold); }
+.r2 { width: 210px; height: 210px; animation: spinRev 30s linear infinite; border-bottom-color: var(--gold); }
+.r3 { width: 240px; height: 240px; animation: pulse 4s ease-in-out infinite; }
+.svg-face { position: relative; z-index: 1; width: 100%; height: 100%; animation: breathe 4s ease-in-out infinite; }
+.svg-face path, .svg-face ellipse { stroke: var(--gold); stroke-width: 1; fill: none; stroke-dasharray: 1000; stroke-dashoffset: 1000; }
+body.show-hero .svg-face path, body.show-hero .svg-face ellipse { animation: draw 1.5s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+.hero-btns { display: flex; flex-direction: column; gap: 12px; justify-content: center; margin-bottom: 20px; width: 100%; }
+.hero-btns .btn { width: 100%; padding: 14px 20px; }
+.trust { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+
+/* Marquee */
+.mq { background: var(--gold); color: var(--bg); padding: 12px 0; overflow: hidden; display: flex; width: 100vw; }
+.mq.rose { background: rgba(160,57,79,0.1); color: var(--rose); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.mq-in { display: flex; white-space: nowrap; animation: scrollX 20s linear infinite; }
+.mq.rev .mq-in { animation-direction: reverse; }
+.mq:hover .mq-in { animation-play-state: paused; }
+.mq-item { font-size: 10px; letter-spacing: 5px; text-transform: uppercase; padding: 0 40px; }
+.mq-item::after { content: '✦'; margin-left: 40px; opacity: 0.5; }
+
+/* Sections */
+section { padding: 80px 5vw; }
+.fade-up { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.25,0.46,0.45,0.94); }
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+
+/* How it works */
+.hiw { max-width: 1000px; margin: 0 auto; }
+.step { display: grid; grid-template-columns: 1fr; gap: 16px; text-align: center; margin-bottom: 50px; position: relative; }
+.step-num { font-family: 'Cormorant', serif; font-size: 60px; color: var(--gold-dim); line-height: 0.8; }
+.step-text h3 { font-size: 28px; color: var(--gold); margin-bottom: 16px; }
+.step-text p { color: var(--muted); line-height: 1.6; max-width: 400px; margin: 0 auto; }
+.step-line { display: none; }
+
+/* Stats */
+.stats { background: rgba(201,169,110,0.03); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 50px; text-align: center; padding: 60px 5vw; }
+.stat { flex: 1; position: relative; }
+.stat:not(:last-child)::after { content: ''; position: absolute; right: calc(50% - 20px); bottom: -25px; height: 1px; width: 40px; background: var(--border); }
+.s-num { font-family: 'Cormorant', serif; font-size: 48px; color: var(--gold); margin-bottom: 8px; }
+.s-lbl { font-size: 12px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+
+/* Horizontal Scroll (Stacked on Mobile) */
+.h-wrap { height: auto; position: relative; }
+.h-sticky { position: relative; height: auto; padding-top: 40px; overflow: visible; display: flex; flex-direction: column; justify-content: center; }
+.h-head { padding: 0 5vw; margin-bottom: 40px; text-align: center; }
+.h-track { display: flex; flex-direction: column; gap: 30px; padding: 0 5vw; width: 100%; transform: none !important; }
+.h-prog-bg { display: none; }
+.h-prog { height: 100%; background: var(--gold); width: 0%; will-change: width; }
+
+/* Cards */
+.card { width: 100%; border: 1px solid var(--border); padding: 30px 20px; background: rgba(6,4,9,0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; flex-direction: column; }
+.card.feat { border-color: var(--gold); position: relative; box-shadow: 0 0 40px rgba(201,169,110,0.1); }
+.feat-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--gold); color: var(--bg); padding: 4px 12px; font-size: 10px; letter-spacing: 2px; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+.av { width: 100px; height: 100px; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant', serif; font-size: 40px; color: var(--cream); border: 1px solid rgba(255,255,255,0.1); }
+.av-l { background: linear-gradient(135deg, #3d1f3d, #7b3a5a); }
+.av-s { background: linear-gradient(135deg, #1a2d4a, #2a5a7a); }
+.av-o { background: linear-gradient(135deg, #2d1a0a, #5a3a1a); }
+.card h3 { font-size: 28px; text-align: center; margin-bottom: 10px; }
+.stars { color: var(--gold); text-align: center; margin-bottom: 20px; letter-spacing: 4px; font-size: 12px; }
+.bio { color: var(--muted); line-height: 1.6; margin-bottom: 30px; flex-grow: 1; font-size: 14px; text-align: center; }
+.c-stats { text-align: center; font-size: 10px; color: var(--gold-dim); margin-bottom: 20px; letter-spacing: 1px; text-transform: uppercase; }
+.card .btn { width: 100%; }
+
+/* Testimonials */
+.test-sec { max-width: 1200px; margin: 0 auto; }
+.t-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 40px; }
+.t-card { border: 1px solid var(--border); padding: 30px 20px; position: relative; transform-style: preserve-3d; background: rgba(6,4,9,0.4); }
+.t-card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(201,169,110,0.12) 0%, transparent 60%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.t-card:hover::before { opacity: 1; }
+.t-content { position: relative; z-index: 1; transform: translateZ(30px); }
+.q-mark { font-family: 'Cormorant', serif; font-size: 60px; color: var(--gold); line-height: 0; position: absolute; top: 10px; left: 0; opacity: 0.3; }
+.t-text { font-size: 16px; line-height: 1.6; margin-bottom: 20px; color: var(--cream); }
+.t-auth { display: flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+.a-dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--rose)); }
+.t-stars { position: absolute; top: 20px; right: 20px; color: var(--gold); font-size: 10px; letter-spacing: 2px; }
+
+/* FAQ */
+.faq { max-width: 800px; margin: 0 auto; }
+.f-item { border-bottom: 1px solid var(--border); }
+.f-head { padding: 20px 0; display: flex; justify-content: space-between; align-items: center; font-family: 'Cormorant', serif; font-size: 20px; cursor: none; }
+.f-icon { color: var(--gold); font-size: 20px; transition: transform 0.4s; font-family: 'Inter', sans-serif; font-weight: 300; }
+.f-body { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1); color: var(--muted); line-height: 1.6; font-size: 14px; }
+.f-body p { padding-bottom: 20px; }
+.f-item.active .f-icon { transform: rotate(45deg); }
+.f-item.active .f-body { max-height: 300px; }
+
+/* Final CTA */
+.cta-sec { height: auto; padding: 100px 5vw; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.cta-sec h2 { margin-bottom: 20px; }
+.cta-sec p { color: var(--muted); margin-bottom: 40px; letter-spacing: 1px; }
+.cta-stack { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 340px; }
+.btn-wrap { display: flex; flex-direction: column; gap: 8px; }
+
+/* Footer */
+footer { border-top: 1px solid var(--gold); padding: 40px 5vw; display: flex; flex-direction: column; gap: 20px; text-align: center; font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.f-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+.f-links a { color: var(--muted); text-decoration: none; transition: color 0.3s; cursor: none; }
+.f-links a:hover { color: var(--gold); }
+
+/* Particles */
+.particle { position: fixed; width: 2px; height: 2px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 9999; transition: transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.8s; }
+.p-pass { position: fixed; width: 1.5px; height: 1.5px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 0; opacity: 0.4; transition: transform 4s linear, opacity 4s; }
+
+/* Animations */
+@keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes spinRev { to { transform: translate(-50%, -50%) rotate(-360deg); } }
+@keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; } 50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; } }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes scrollX { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+/* Desktop Overrides */
+@media (min-width: 769px) {
+  nav { flex-direction: row; padding: 24px 5vw; }
+  .logo { font-size: 13px; }
+  .hero { padding-top: 0; }
+  .port-wrap { width: 200px; height: 250px; margin: 40px auto; }
+  .r1 { width: 240px; height: 240px; } .r2 { width: 280px; height: 280px; } .r3 { width: 320px; height: 320px; }
+  .hero-btns { flex-direction: row; width: auto; }
+  .hero-btns .btn { width: auto; padding: 16px 32px; }
+  .trust { font-size: 12px; }
+  .step { grid-template-columns: 120px 1fr; gap: 40px; text-align: left; }
+  .step-num { font-size: 80px; }
+  .step-text p { margin: 0; }
+  .step-line { display: block; position: absolute; left: 40px; top: 80px; bottom: -60px; border-left: 1px dashed var(--border); }
+  .step:last-child .step-line { display: none; }
+  .stats { flex-direction: row; gap: 0; }
+  .stat:not(:last-child)::after { width: 1px; height: 80%; top: 10%; right: 0; bottom: auto; }
+  .s-num { font-size: 64px; }
+  .h-wrap { height: 300vh; }
+  .h-sticky { height: 100vh; padding-top: 80px; }
+  .h-head { text-align: left; }
+  .h-track { flex-direction: row; width: max-content; gap: 40px; }
+  .card { width: 400px; padding: 40px; }
+  .card.feat { transform: translateY(-20px); }
+  .av { width: 120px; height: 120px; font-size: 48px; }
+  .h-prog-bg { display: block; position: absolute; bottom: 40px; left: 5vw; right: 5vw; height: 1px; background: var(--border); }
+  .t-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
+  .t-card { padding: 50px 40px; }
+  .q-mark { font-size: 80px; top: 20px; left: -10px; }
+  .t-text { font-size: 19px; }
+  .f-head { font-size: 24px; padding: 30px 0; }
+  .f-body p { padding-right: 40px; font-size: 15px; }
+  .cta-sec { height: 100vh; padding: 0 5vw; }
+  footer { flex-direction: row; text-align: left; }
+}
+
+/* Touch Devices (Disable Custom Cursor & Hover Effects) */
+@media (pointer: coarse) {
+  #c-dot, #c-ring { display: none !important; }
+  * { cursor: auto !important; }
+  .btn, a, .f-head, .hover-target { cursor: pointer !important; }
+  .t-card:hover::before { opacity: 0 !important; }
+  .mq:hover .mq-in { animation-play-state: running !important; }
+}
+</style>
+</head>
+<body>
+
+<svg class="noise"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div id="progress"></div>
+<div id="c-dot"></div><div id="c-ring"></div>
+
+<div id="intro">
+  <div class="i-half i-top"></div>
+  <div id="i-line"></div>
+  <div class="i-half i-bot"></div>
+</div>
+
+<canvas id="starfield"></canvas>
+
+<nav id="nav">
+  <div class="logo">Soul✦Sketch</div>
+  <a href="#artists" class="btn btn-ghost hover-target">Choose Artist &rarr;</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="label h-anim d1" style="margin-bottom: 30px;">The Original Psychic Network</div>
+    <h1 class="h1-size h-anim d2 corm">See The Face Of<br><span class="italic gold-text">Your Soulmate</span></h1>
+    
+    <div class="port-wrap h-anim d3">
+      <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+      <div class="glow"></div>
+      <svg viewBox="0 0 200 250" class="svg-face">
+        <path d="M60,100 C60,30 140,30 140,100 C140,170 120,220 100,230 C80,220 60,170 60,100 Z" style="animation-delay: 1.5s"/>
+        <path d="M75,115 Q85,108 95,115" style="animation-delay: 1.7s"/>
+        <path d="M105,115 Q115,108 125,115" style="animation-delay: 1.8s"/>
+        <path d="M100,115 L100,145 L96,150" style="animation-delay: 2s"/>
+        <path d="M88,175 Q100,182 112,175 Q100,188 88,175" style="animation-delay: 2.2s"/>
+        <path d="M85,223 C85,260 40,250 20,250" style="animation-delay: 2.4s"/>
+        <path d="M115,223 C115,260 160,250 180,250" style="animation-delay: 2.5s"/>
+        <ellipse cx="85" cy="118" rx="1.5" ry="1.5" style="animation-delay: 2.6s"/>
+        <ellipse cx="115" cy="118" rx="1.5" ry="1.5" style="animation-delay: 2.7s"/>
+      </svg>
+    </div>
+
+    <div class="hero-btns h-anim d4">
+      <a href="#artists" class="btn btn-pri hover-target">✦ Reveal My Soulmate</a>
+      <a href="#how-it-works" class="btn btn-ghost hover-target">How It Works &darr;</a>
+    </div>
+    <div class="trust h-anim d5">🔒 100% Private &middot; ⚡ 24hr Delivery &middot; 💎 Guaranteed</div>
+  </div>
+</section>
+
+<div class="mq">
+  <div class="mq-in">
+    <div class="mq-item">Twin Flame Recognition</div><div class="mq-item">Past Life Connections</div>
+    <div class="mq-item">Destiny Readings</div><div class="mq-item">Aura Visualization</div>
+    <div class="mq-item">Soul Contract Reveals</div>
+    <div class="mq-item">Twin Flame Recognition</div><div class="mq-item">Past Life Connections</div>
+    <div class="mq-item">Destiny Readings</div><div class="mq-item">Aura Visualization</div>
+    <div class="mq-item">Soul Contract Reveals</div>
+  </div>
+</div>
+
+<section id="how-it-works" class="hiw">
+  <div class="step fade-up">
+    <div class="step-num">01</div>
+    <div class="step-text">
+      <h3 class="corm scramble" data-text="Share Your Energy">Share Your Energy</h3>
+      <p>Your name, date of birth, and emotional state is all we need.</p>
+    </div>
+    <div class="step-line"></div>
+  </div>
+  <div class="step fade-up">
+    <div class="step-num">02</div>
+    <div class="step-text">
+      <h3 class="corm scramble" data-text="The Artist Connects">The Artist Connects</h3>
+      <p>Your chosen psychic enters a meditative state and tunes into your frequency.</p>
+    </div>
+    <div class="step-line"></div>
+  </div>
+  <div class="step fade-up">
+    <div class="step-num">03</div>
+    <div class="step-text">
+      <h3 class="corm scramble" data-text="Your Portrait Arrives">Your Portrait Arrives</h3>
+      <p>A hand-drawn sketch of your soulmate arrives in your inbox within 24 hours.</p>
+    </div>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat fade-up">
+    <div class="s-num counter" data-target="47283">0</div>
+    <div class="s-lbl">Sketches Delivered</div>
+  </div>
+  <div class="stat fade-up">
+    <div class="s-num"><span class="counter" data-target="98">0</span>.6%</div>
+    <div class="s-lbl">Accuracy Rate</div>
+  </div>
+  <div class="stat fade-up">
+    <div class="s-num counter" data-target="127">0</div>
+    <div class="s-lbl">Countries Reached</div>
+  </div>
+</section>
+
+<div class="h-wrap" id="artists">
+  <div class="h-sticky">
+    <div class="h-head fade-up">
+      <div class="label" style="margin-bottom: 16px;">CHOOSE YOUR READER</div>
+      <h2 class="h2-size corm scramble" data-text="Your soul already knows which one to pick">Your soul already knows which one to pick</h2>
+    </div>
+    <div class="h-track" id="h-track">
+      
+      <div class="card">
+        <div class="label" style="text-align: center;">TWIN FLAME SPECIALIST</div>
+        <div class="av av-l">L</div>
+        <h3 class="corm italic">Luna Celestine</h3>
+        <div class="stars">★★★★★</div>
+        <p class="bio">15 years of channeling twin flame connections. Luna's gift is seeing the exact face of the person whose soul contract is tied to yours — often with eerie accuracy that leaves clients shaking.</p>
+        <div class="c-stats">19,840 sketches &middot; 98.7% accuracy</div>
+        <a href="https://c8c5em1x6r8recu69vjfqhsrfy.hop.clickbank.net/?&traffic_source=instagram&traffic_type=organic" target="_blank" rel="noopener" class="btn btn-ghost hover-target">Choose Luna &rarr;</a>
+      </div>
+
+      <div class="card feat">
+        <div class="feat-badge">MOST REQUESTED</div>
+        <div class="label" style="text-align: center;">PAST LIFE & DESTINY READER</div>
+        <div class="av av-s">S</div>
+        <h3 class="corm italic">Seraphina Voss</h3>
+        <div class="stars">★★★★★</div>
+        <p class="bio">Seraphina sees past the present moment into the soul contracts written before birth. Clients describe instant recognition — 'I've seen this face in my dreams for years.' Our most requested artist for a reason.</p>
+        <div class="c-stats">24,200 sketches &middot; 99.1% accuracy</div>
+        <a href="https://ys27292729.systeme.io/d4772949" target="_blank" rel="noopener" class="btn btn-pri hover-target">Choose Seraphina &rarr;</a>
+      </div>
+
+      <div class="card">
+        <div class="label" style="text-align: center;">SOULMATE & DESTINY EXPERT</div>
+        <div class="av av-o">O</div>
+        <h3 class="corm italic">Orion Drake</h3>
+        <div class="stars">★★★★★</div>
+        <p class="bio">Orion's readings go beyond the face — he reveals hidden symbols, the first letter of their name, and the circumstances of your first meeting. His portraits carry a warmth that clients describe as 'feeling like coming home.'</p>
+        <div class="c-stats">15,390 sketches &middot; 97.9% accuracy</div>
+        <a href="https://81cd8st18s7z7byqyhqezfri07.hop.clickbank.net/?&traffic_source=instagram&traffic_type=organic" target="_blank" rel="noopener" class="btn btn-ghost hover-target">Choose Orion &rarr;</a>
+      </div>
+
+    </div>
+    <div class="h-prog-bg"><div class="h-prog" id="h-prog"></div></div>
+  </div>
+</div>
+
+<div class="mq rose rev">
+  <div class="mq-in">
+    <div class="mq-item">Twin Flame Recognition</div><div class="mq-item">Past Life Connections</div>
+    <div class="mq-item">Destiny Readings</div><div class="mq-item">Aura Visualization</div>
+    <div class="mq-item">Soul Contract Reveals</div>
+    <div class="mq-item">Twin Flame Recognition</div><div class="mq-item">Past Life Connections</div>
+    <div class="mq-item">Destiny Readings</div><div class="mq-item">Aura Visualization</div>
+    <div class="mq-item">Soul Contract Reveals</div>
+  </div>
+</div>
+
+<section class="test-sec">
+  <div class="t-grid">
+    
+    <div class="t-card fade-up hover-target">
+      <div class="q-mark">❝</div>
+      <div class="t-stars">★★★★★</div>
+      <div class="t-content">
+        <p class="t-text italic corm">"I burst into tears when I opened the email. The face in the sketch was someone I had been dreaming about for two years. I met him at a coffee shop four months later. This changed my life."</p>
+        <div class="t-auth"><div class="a-dot"></div>Sarah M., Austin Texas</div>
+      </div>
+    </div>
+
+    <div class="t-card fade-up hover-target">
+      <div class="q-mark">❝</div>
+      <div class="t-stars">★★★★★</div>
+      <div class="t-content">
+        <p class="t-text italic corm">"Seraphina's sketch matched my now-fiancé down to the crinkle of his eyes. I showed it to him on our third date and he went completely silent. He still has the sketch framed above our bed."</p>
+        <div class="t-auth"><div class="a-dot"></div>Emma R., London</div>
+      </div>
+    </div>
+
+    <div class="t-card fade-up hover-target">
+      <div class="q-mark">❝</div>
+      <div class="t-stars">★★★★★</div>
+      <div class="t-content">
+        <p class="t-text italic corm">"I was deeply skeptical. I'm a scientist. But the portrait Orion drew was so specific — a small scar above the left brow — that when I met Daniel six weeks later, I nearly fainted."</p>
+        <div class="t-auth"><div class="a-dot"></div>Dr. Madison K., Sydney</div>
+      </div>
+    </div>
+
+    <div class="t-card fade-up hover-target">
+      <div class="q-mark">❝</div>
+      <div class="t-stars">★★★★★</div>
+      <div class="t-content">
+        <p class="t-text italic corm">"Nothing prepared me for this. Luna not only sketched his face — she wrote that he plays music. My boyfriend is a guitarist. The accuracy still gives me chills every time I think about it."</p>
+        <div class="t-auth"><div class="a-dot"></div>Priya D., Toronto</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="faq">
+  <div class="f-item fade-up hover-target">
+    <div class="f-head">How accurate are the sketches? <span class="f-icon">+</span></div>
+    <div class="f-body"><p>Our three artists collectively maintain an accuracy rating above 97% based on post-delivery client surveys. Many clients recognize the face immediately upon opening their sketch — others meet someone matching the portrait within weeks.</p></div>
+  </div>
+  <div class="f-item fade-up hover-target">
+    <div class="f-head">How quickly will I receive my sketch? <span class="f-icon">+</span></div>
+    <div class="f-body"><p>Digital delivery within 24 hours for most orders. During peak periods, allow up to 48 hours. Your portrait will be sent directly to your email as a high-resolution file.</p></div>
+  </div>
+  <div class="f-item fade-up hover-target">
+    <div class="f-head">Which artist should I choose? <span class="f-icon">+</span></div>
+    <div class="f-body"><p>Trust whatever name your eye was drawn to first on this page. Luna specializes in twin flames. Seraphina excels in past-life and destiny readings. Orion reveals hidden symbols and meeting circumstances. All three are exceptionally gifted — your instinct is the compass.</p></div>
+  </div>
+  <div class="f-item fade-up hover-target">
+    <div class="f-head">Is my information kept completely private? <span class="f-icon">+</span></div>
+    <div class="f-body"><p>Yes. Your personal details are used solely for your reading and are never stored, shared, or sold. Your spiritual journey belongs to you alone.</p></div>
+  </div>
+  <div class="f-item fade-up hover-target">
+    <div class="f-head">What if I don't recognize the face in my sketch? <span class="f-icon">+</span></div>
+    <div class="f-body"><p>Some clients meet their soulmate months after receiving their portrait. The universe operates on its own timeline. Each artist's team offers follow-up support — satisfaction is always the goal.</p></div>
+  </div>
+</section>
+
+<section class="cta-sec">
+  <h2 class="h1-size corm fade-up">Are you ready to see<br><span class="italic gold-text">the face waiting for you?</span></h2>
+  <p class="fade-up">47,000 women already have. Your soulmate exists.</p>
+  <div class="cta-stack fade-up">
+    <div class="btn-wrap">
+      <div class="label">TWIN FLAME READINGS</div>
+      <a href="#artists" class="btn btn-pri hover-target">Luna</a>
+    </div>
+    <div class="btn-wrap">
+      <div class="label rose-text">PAST LIFE DESTINY</div>
+      <a href="#artists" class="btn btn-rose hover-target">Seraphina</a>
+    </div>
+    <div class="btn-wrap">
+      <div class="label brown-text">HIDDEN SYMBOLS</div>
+      <a href="#artists" class="btn btn-brn hover-target">Orion</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="logo">Soul✦Sketch</div>
+  <div class="f-links">
+    <a href="#" class="hover-target">Privacy</a>
+    <a href="#" class="hover-target">Terms</a>
+    <a href="#" class="hover-target">Contact</a>
+  </div>
+  <div>Results may vary. Entertainment purposes.</div>
+</footer>
+
+<script>
+const isTouch = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+
+// Intro Sequence
+setTimeout(() => document.body.classList.add('loaded'), 200);
+setTimeout(() => document.body.classList.add('open'), 1000);
+setTimeout(() => document.body.classList.add('show-hero'), 1400);
+
+// Cursor
+const dot = document.getElementById('c-dot');
+const ring = document.getElementById('c-ring');
+if (!isTouch) {
+  let mx = window.innerWidth/2, my = window.innerHeight/2;
+  let rx = mx, ry = my;
+  window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+  function renderCursor() {
+    rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+    dot.style.transform = `translate(${mx}px, ${my}px)`;
+    ring.style.transform = `translate(${rx}px, ${ry}px)`;
+    requestAnimationFrame(renderCursor);
+  }
+  requestAnimationFrame(renderCursor);
+
+  document.querySelectorAll('.hover-target, .btn, .t-card, .f-item').forEach(el => {
+    el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+    el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+  });
+}
+
+// Scroll Progress & Nav
+const nav = document.getElementById('nav');
+const prog = document.getElementById('progress');
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY;
+  nav.classList.toggle('scrolled', scrollY > 50);
+  const max = document.body.scrollHeight - window.innerHeight;
+  prog.style.width = `${(scrollY / max) * 100}%`;
+});
+
+// Starfield
+const canvas = document.getElementById('starfield');
+const ctx = canvas.getContext('2d');
+let width, height, stars = [], shootingStars = [];
+function initStars() {
+  width = canvas.width = window.innerWidth;
+  height = canvas.height = window.innerHeight;
+  const starCount = window.innerWidth < 768 ? 80 : 200;
+  stars = Array.from({length: starCount}, () => ({
+    x: Math.random() * width, y: Math.random() * height,
+    r: 0.3 + Math.random() * 1.2,
+    speed: 0.01 + Math.random() * 0.03,
+    phase: Math.random() * Math.PI * 2
+  }));
+}
+initStars();
+window.addEventListener('resize', initStars);
+
+setInterval(() => {
+  if (Math.random() > 0.5) {
+    shootingStars.push({
+      x: Math.random() * width, y: 0,
+      len: 50 + Math.random() * 100,
+      speed: 15 + Math.random() * 10,
+      life: 1
+    });
+  }
+}, 4000);
+
+let px = 0, py = 0;
+if (!isTouch) {
+  window.addEventListener('mousemove', e => {
+    px = (e.clientX - width/2) * 0.02;
+    py = (e.clientY - height/2) * 0.02;
+  });
+}
+
+function drawStars() {
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#c9a96e';
+  stars.forEach(s => {
+    s.phase += s.speed;
+    const alpha = 0.3 + Math.abs(Math.sin(s.phase)) * 0.7;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(s.x - px, s.y - py, s.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+  
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1;
+  for (let i = shootingStars.length - 1; i >= 0; i--) {
+    const s = shootingStars[i];
+    ctx.globalAlpha = s.life;
+    ctx.beginPath();
+    ctx.moveTo(s.x, s.y);
+    ctx.lineTo(s.x - s.len, s.y + s.len);
+    ctx.stroke();
+    s.x -= s.speed; s.y += s.speed; s.life -= 0.02;
+    if (s.life <= 0) shootingStars.splice(i, 1);
+  }
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(drawStars);
+}
+requestAnimationFrame(drawStars);
+
+// Horizontal Scroll (Desktop Only)
+const hWrap = document.querySelector('.h-wrap');
+const hTrack = document.getElementById('h-track');
+const hProg = document.getElementById('h-prog');
+window.addEventListener('scroll', () => {
+  if (window.innerWidth <= 768) {
+    hTrack.style.transform = 'none';
+    return;
+  }
+  const rect = hWrap.getBoundingClientRect();
+  const scrollStart = rect.top;
+  const scrollDist = rect.height - window.innerHeight;
+  if (scrollStart <= 0 && scrollStart >= -scrollDist) {
+    const progress = Math.abs(scrollStart) / scrollDist;
+    const maxTranslate = hTrack.scrollWidth - window.innerWidth + window.innerWidth * 0.1;
+    hTrack.style.transform = `translateX(-${progress * maxTranslate}px)`;
+    hProg.style.width = `${progress * 100}%`;
+  }
+});
+
+// Text Scramble
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*';
+const scrambles = document.querySelectorAll('.scramble');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      if (el.dataset.done) return;
+      el.dataset.done = true;
+      const text = el.dataset.text;
+      let iterations = 0;
+      const interval = setInterval(() => {
+        el.innerText = text.split('').map((char, i) => {
+          if (char === ' ') return ' ';
+          if (i < iterations) return char;
+          return chars[Math.floor(Math.random() * chars.length)];
+        }).join('');
+        if (iterations >= text.length) clearInterval(interval);
+        iterations += 1/3;
+      }, 30);
+    }
+  });
+}, { threshold: 0.5 });
+scrambles.forEach(el => obs.observe(el));
+
+// Fade Up
+const fadeObs = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => fadeObs.observe(el));
+
+// Counters
+const countObs = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      if (el.dataset.done) return;
+      el.dataset.done = true;
+      const target = parseInt(el.dataset.target);
+      const duration = 2000;
+      const startTime = performance.now();
+      function update(time) {
+        const elapsed = time - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 4);
+        el.innerText = Math.floor(ease * target).toLocaleString();
+        if (progress < 1) requestAnimationFrame(update);
+        else el.innerText = target.toLocaleString() + (target > 1000 ? '+' : '');
+      }
+      requestAnimationFrame(update);
+    }
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('.counter').forEach(el => countObs.observe(el));
+
+// 3D Tilt
+if (!isTouch) {
+  document.querySelectorAll('.t-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+      const xc = rect.width/2; const yc = rect.height/2;
+      const dx = x - xc; const dy = y - yc;
+      card.style.transform = `perspective(800px) rotateX(${-dy/yc * 8}deg) rotateY(${dx/xc * 8}deg)`;
+      card.style.setProperty('--mx', `${(x/rect.width)*100}%`);
+      card.style.setProperty('--my', `${(y/rect.height)*100}%`);
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = `perspective(800px) rotateX(0) rotateY(0)`;
+    });
+  });
+}
+
+// FAQ
+document.querySelectorAll('.f-head').forEach(head => {
+  head.addEventListener('click', () => {
+    const item = head.parentElement;
+    const isActive = item.classList.contains('active');
+    document.querySelectorAll('.f-item').forEach(i => i.classList.remove('active'));
+    if (!isActive) item.classList.add('active');
+  });
+});
+
+// Particles
+function createParticle(x, y) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  document.body.appendChild(p);
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 50 + Math.random() * 100;
+  const tx = Math.cos(angle) * dist;
+  const ty = Math.sin(angle) * dist + 50;
+  p.style.left = x + 'px'; p.style.top = y + 'px';
+  requestAnimationFrame(() => {
+    p.style.transform = `translate(${tx}px, ${ty}px)`;
+    p.style.opacity = '0';
+  });
+  setTimeout(() => p.remove(), 800);
+}
+window.addEventListener('click', e => {
+  for(let i=0; i<12; i++) createParticle(e.clientX, e.clientY);
+});
+
+setInterval(() => {
+  const p = document.createElement('div');
+  p.className = 'p-pass';
+  document.body.appendChild(p);
+  p.style.left = Math.random() * window.innerWidth + 'px';
+  p.style.top = window.innerHeight + 'px';
+  requestAnimationFrame(() => {
+    p.style.transform = `translateY(-${200 + Math.random()*200}px)`;
+    p.style.opacity = '0';
+  });
+  setTimeout(() => p.remove(), 4000);
+}, 800);
+</script>
+</body>
+</html>
